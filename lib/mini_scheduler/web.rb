@@ -18,22 +18,24 @@ module MiniScheduler
       end
     end
 
-    def self.registered(app)
-      app.helpers do
-        def sane_time(time)
-          return unless time
-          time
-        end
+    module Helpers
+      def sane_time(time)
+        return unless time
+        time
+      end
 
-        def sane_duration(duration)
-          return unless duration
-          if duration < 1000
-            "#{duration}ms"
-          else
-            "#{"%.2f" % (duration / 1000.0)} secs"
-          end
+      def sane_duration(duration)
+        return unless duration
+        if duration < 1000
+          "#{duration}ms"
+        else
+          "#{"%.2f" % (duration / 1000.0)} secs"
         end
       end
+    end
+
+    def self.registered(app)
+      app.helpers Helpers
 
       app.get "/scheduler" do
         MiniScheduler.before_sidekiq_web_request&.call
@@ -72,5 +74,5 @@ module MiniScheduler
   end
 end
 
-Sidekiq::Web.register(MiniScheduler::Web)
+Sidekiq::Web.configure {|cfg| cfg.register(MiniScheduler::Web, name: nil, tab: nil, index: nil) }
 Sidekiq::Web.tabs["Scheduler"] = "scheduler"
